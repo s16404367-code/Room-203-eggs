@@ -471,6 +471,15 @@ function initFirebase(cfg){
     fbRef = db.ref('flattab');
     document.getElementById('mainApp').style.display = 'block';
     setSyncStatus('syncing', 'Connecting…');
+    /* Monitor connection state */
+    db.ref('.info/connected').on('value', snap => {
+      if(snap.val() === true){
+        setSyncStatus('ok', 'Live — synced');
+      } else {
+        setSyncStatus('off', 'Offline — check internet');
+      }
+    });
+
     /* Real-time listener — fires whenever ANY device writes data */
     fbRef.on('value', snapshot => {
       const val = snapshot.val() || {};
@@ -495,26 +504,42 @@ function setSyncStatus(state, msg){
   const bar = document.getElementById('syncBar');
   bar.className = 'sync-bar' + (state==='ok'?' ':state==='syncing'?' syncing':' off');
   document.getElementById('syncMsg').textContent = msg;
+  /* Also show toast for errors so user notices */
+  if(state==='off' && msg !== 'Connecting…'){
+    console.warn('Sync status:', state, msg);
+  }
 }
 
-/* Write to Firebase — all writes go here */
+/* Write to Firebase — use db.ref(path) directly to avoid double-path bug */
 function fbWrite(path, value){
   setSyncStatus('syncing','Saving…');
-  return fbRef.child(path).set(value)
+  return db.ref(path).set(value)
     .then(()=>setSyncStatus('ok','Live — synced'))
-    .catch(e=>{ setSyncStatus('off','Save failed'); toast('Save failed: '+e.message,4000); });
+    .catch(e=>{
+      setSyncStatus('off','Save failed — check rules');
+      toast('Save failed: '+e.message, 5000);
+      console.error('fbWrite error on path:', path, e);
+    });
 }
 function fbPush(path, value){
   setSyncStatus('syncing','Saving…');
-  return fbRef.child(path).push(value)
+  return db.ref(path).push(value)
     .then(()=>setSyncStatus('ok','Live — synced'))
-    .catch(e=>{ setSyncStatus('off','Save failed'); toast('Save failed: '+e.message,4000); });
+    .catch(e=>{
+      setSyncStatus('off','Save failed — check rules');
+      toast('Save failed: '+e.message, 5000);
+      console.error('fbPush error on path:', path, e);
+    });
 }
 function fbRemove(path){
   setSyncStatus('syncing','Saving…');
-  return fbRef.child(path).remove()
+  return db.ref(path).remove()
     .then(()=>setSyncStatus('ok','Live — synced'))
-    .catch(e=>{ setSyncStatus('off','Save failed'); toast('Save failed: '+e.message,4000); });
+    .catch(e=>{
+      setSyncStatus('off','Save failed — check rules');
+      toast('Save failed: '+e.message, 5000);
+      console.error('fbRemove error on path:', path, e);
+    });
 }
 
 /* ═══════════════════════════════════════════
