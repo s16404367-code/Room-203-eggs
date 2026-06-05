@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FlatTab</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F5F0;--sur:#fff;--sur2:#F0EDE6;
+  --bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.15);
+  --txt:#1A1814;--mut:#7A7570;
+  --acc:#2D5F3F;--acc-bg:#E8F2EC;--acc-tx:#1A4029;
+  --dan:#C0392B;--dan-bg:#FDECEA;
+  --wrn:#A0560A;--wrn-bg:#FEF3E6;
+  --ok:#1A6B3C;--ok-bg:#E6F4ED;
+  --ca:#3B5BDB;--cb:#C2255C;--cc:#0C8599;--cd:#6741D9;
+  --ca-bg:#EDF2FF;--cb-bg:#FFF0F6;--cc-bg:#E3FAFC;--cd-bg:#F3F0FF;
+  --r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--txt);font-size:15px;overflow-x:hidden;}
+.app{max-width:480px;margin:0 auto;padding-bottom:130px;}
+
+/* ── Sync indicator ── */
+.sync-bar{display:flex;align-items:center;gap:6px;padding:6px 16px;
+  background:var(--ok-bg);font-size:11px;font-weight:700;color:var(--ok);}
+.sync-bar.off{background:var(--wrn-bg);color:var(--wrn);}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.sync-bar.syncing .sync-dot{animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* ── Header ── */
+.hdr{background:var(--sur);border-bottom:1px solid var(--bdr);padding:14px 16px 10px;position:sticky;top:0;z-index:20;}
+.hdr-top{display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:20px;font-weight:700;letter-spacing:-.5px;cursor:default;user-select:none;}
+.logo em{color:var(--acc);font-style:normal;}
+.who-badge{font-size:12px;font-weight:600;padding:7px 14px;border-radius:20px;
+  background:var(--acc-bg);color:var(--acc-tx);border:1px solid rgba(45,95,63,.25);
+  min-height:36px;display:flex;align-items:center;white-space:nowrap;}
+.who-badge.unlocked{cursor:pointer;}
+.who-bar{display:flex;gap:6px;margin-top:10px;}
+.who-btn{flex:1;min-height:48px;padding:8px 4px;border-radius:var(--rs);
+  border:1.5px solid var(--bdr2);background:var(--sur);
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:var(--mut);}
+.who-btn[data-p="A"].sel{background:var(--ca-bg);color:var(--ca);border-color:var(--ca);}
+.who-btn[data-p="B"].sel{background:var(--cb-bg);color:var(--cb);border-color:var(--cb);}
+.who-btn[data-p="C"].sel{background:var(--cc-bg);color:var(--cc);border-color:var(--cc);}
+.who-btn[data-p="D"].sel{background:var(--cd-bg);color:var(--cd);border-color:var(--cd);}
+
+/* ── Tabs ── */
+.tabs{display:flex;background:var(--sur);border-bottom:1px solid var(--bdr);}
+.tab{flex:1;min-height:46px;padding:10px 2px;text-align:center;font-size:11px;font-weight:700;
+  cursor:pointer;color:var(--mut);border-bottom:2.5px solid transparent;
+  letter-spacing:.03em;display:flex;align-items:center;justify-content:center;}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc);}
+.sec{padding:14px 14px 0;}
+
+/* ── Balance grid ── */
+.bal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.bal-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:13px;}
+.bal-card[data-p="A"]{border-top:3px solid var(--ca);}
+.bal-card[data-p="B"]{border-top:3px solid var(--cb);}
+.bal-card[data-p="C"]{border-top:3px solid var(--cc);}
+.bal-card[data-p="D"]{border-top:3px solid var(--cd);}
+.bal-name{font-size:13px;font-weight:700;margin-bottom:6px;}
+.bal-amt{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;}
+.pos{color:var(--ok);}.neg{color:var(--dan);}.zero{color:var(--mut);}
+.bal-sub{font-size:11px;color:var(--mut);margin-top:2px;}
+
+/* ── Settle ── */
+.settle-row{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rs);padding:12px 13px;margin-bottom:8px;}
+.settle-top{display:flex;align-items:center;gap:7px;}
+.settle-amt{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--wrn);margin-left:auto;}
+.settle-upi{font-size:11px;color:var(--mut);margin-top:6px;font-family:'DM Mono',monospace;word-break:break-all;}
+.settle-act{margin-top:10px;}
+.btn-settle{display:block;width:100%;min-height:48px;font-family:'Syne',sans-serif;
+  font-size:14px;font-weight:700;padding:12px 20px;border-radius:var(--rs);border:none;cursor:pointer;text-align:center;}
+.btn-settle.pn{background:var(--ok);color:#fff;}
+.btn-settle.mr{background:var(--acc-bg);color:var(--acc-tx);border:1px solid rgba(45,95,63,.3);}
+.btn-settle:active{opacity:.75;}
+
+/* ── Forms ── */
+.fcard{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:12px;}
+.ftitle{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.frow{margin-bottom:13px;}
+label{display:block;font-size:11px;font-weight:700;color:var(--mut);margin-bottom:5px;letter-spacing:.05em;text-transform:uppercase;}
+input,select{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--bdr2);border-radius:var(--rs);
+  font-family:'Syne',sans-serif;font-size:15px;background:var(--sur);color:var(--txt);outline:none;}
+input[readonly]{background:var(--sur2);color:var(--mut);cursor:default;}
+input:focus:not([readonly]),select:focus{border-color:var(--acc);outline:2px solid var(--acc-bg);}
+.btn-main{width:100%;min-height:50px;padding:13px;background:var(--acc);color:#fff;border:none;
+  border-radius:var(--rs);font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;}
+.btn-main:active{opacity:.8;}
+.btn-main:disabled{opacity:.35;cursor:not-allowed;}
+.btn-danger{background:var(--dan) !important;}
+
+/* ── Person qty rows ── */
+.pq-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.pq-row{display:flex;align-items:center;gap:8px;background:var(--sur2);padding:10px 11px;border-radius:var(--rs);}
+.pdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.pname{font-size:12px;flex:1;font-weight:700;}
+.qin{width:52px!important;min-height:40px!important;text-align:center;padding:6px 4px!important;font-size:16px!important;}
+
+/* ── Info/warn/preview ── */
+.ibox{font-size:12px;color:var(--mut);padding:10px 12px;background:var(--sur2);border-radius:var(--rs);margin-bottom:10px;}
+.pbox{font-size:13px;padding:12px;background:var(--acc-bg);border-radius:var(--rs);color:var(--acc-tx);line-height:2;margin-bottom:10px;}
+.wbox{font-size:13px;padding:10px 12px;background:var(--dan-bg);border-radius:var(--rs);color:var(--dan);margin-bottom:10px;}
+.nologin{background:var(--wrn-bg);color:var(--wrn);font-size:13px;padding:11px 14px;border-radius:var(--rs);margin-bottom:12px;font-weight:600;}
+.slabel{font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin:16px 0 8px;}
+.pbar{height:6px;background:var(--sur2);border-radius:3px;overflow:hidden;margin:5px 0;}
+.pfill{height:100%;background:var(--acc);border-radius:3px;}
+
+/* ── Log ── */
+.litem{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:13px 14px;margin-bottom:9px;}
+.litem.deleted-item{opacity:.55;border-color:var(--dan);border-style:dashed;}
+.ltop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
+.lname{font-size:14px;font-weight:700;}
+.ltop-right{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.lbadge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.06em;}
+.lbadge.buy{background:var(--acc-bg);color:var(--acc-tx);}
+.lbadge.eat{background:var(--wrn-bg);color:var(--wrn);}
+.lbadge.pay{background:var(--ok-bg);color:var(--ok);}
+.lbadge.del{background:var(--dan-bg);color:var(--dan);}
+.btn-edit{background:var(--sur2);border:1px solid var(--bdr2);cursor:pointer;
+  border-radius:6px;padding:5px 10px;font-size:13px;min-height:32px;color:var(--mut);font-weight:600;}
+.ldetail{font-size:12px;color:var(--mut);margin-bottom:5px;line-height:1.5;}
+.lpersons{display:flex;flex-direction:column;gap:4px;margin-bottom:4px;}
+.lperson{font-size:12px;display:flex;align-items:center;gap:5px;}
+.ltime{font-family:'DM Mono',monospace;font-size:10px;color:var(--mut);margin-top:3px;}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+.da{background:var(--ca);}.db{background:var(--cb);}.dc{background:var(--cc);}.dd{background:var(--cd);}
+
+/* ── Report ── */
+.rtoggle{display:flex;gap:5px;margin-bottom:10px;}
+.rtbtn{flex:1;min-height:42px;padding:8px 2px;border:1px solid var(--bdr2);border-radius:var(--rs);
+  background:var(--sur);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;color:var(--mut);}
+.rtbtn.on{background:var(--acc);color:#fff;border-color:var(--acc);}
+.date-filter-row{display:flex;gap:8px;align-items:center;margin-bottom:6px;}
+.date-filter-row label{width:38px;font-size:11px;margin:0;text-transform:uppercase;}
+.date-filter-row input[type=date]{flex:1;min-height:42px;font-size:13px;padding:8px 10px;}
+.rcrd{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:10px;}
+.rtitle{font-size:13px;font-weight:700;margin-bottom:13px;}
+.rbrow{margin-bottom:11px;}
+.rbtop{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;}
+.rbname{font-weight:700;}.rbval{font-family:'DM Mono',monospace;font-size:12px;color:var(--mut);}
+.rbtrack{height:8px;background:var(--sur2);border-radius:4px;overflow:hidden;}
+.rbfill{height:100%;border-radius:4px;}
+
+/* ── Admin ── */
+.admin-badge{background:#1A1814 !important;color:#FFD700 !important;border-color:#FFD700 !important;}
+.admin-bar{background:#1A1814;padding:8px 16px;color:#FFD700;font-size:11px;font-weight:700;text-align:center;letter-spacing:.05em;}
+.btn-admin-action{display:block;width:100%;min-height:44px;padding:10px;margin-bottom:8px;
+  background:rgba(255,215,0,.12);color:#c8a200;border:1px solid rgba(255,215,0,.3);
+  border-radius:var(--rs);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:left;padding-left:14px;}
+.btn-admin-exit{display:block;width:100%;min-height:44px;padding:10px;
+  background:transparent;color:#666;border:1px solid #333;
+  border-radius:var(--rs);font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;}
+
+/* ── Modals ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;
+  display:flex;align-items:flex-end;justify-content:center;}
+.modal-sheet{background:var(--sur);border-radius:20px 20px 0 0;padding:20px 18px 40px;
+  width:100%;max-width:480px;max-height:88vh;overflow-y:auto;}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:18px;
+  display:flex;justify-content:space-between;align-items:center;}
+.btn-close{background:var(--sur2);border:none;cursor:pointer;border-radius:50%;
+  width:36px;height:36px;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--mut);}
+
+/* PIN modal */
+.pin-sheet{background:#1A1814;border-radius:20px 20px 0 0;padding:24px 20px 44px;
+  width:100%;max-width:480px;}
+.pin-title{font-size:16px;font-weight:700;color:#FFD700;margin-bottom:4px;text-align:center;}
+.pin-sub{font-size:12px;color:rgba(255,255,255,.45);text-align:center;margin-bottom:20px;}
+.pin-input{background:rgba(255,255,255,.08) !important;border:1px solid rgba(255,215,0,.3) !important;
+  color:#fff !important;text-align:center;font-size:24px;letter-spacing:8px;font-family:'DM Mono',monospace;}
+.pin-input:focus{border-color:#FFD700 !important;outline:none !important;}
+.btn-pin-ok{width:100%;min-height:50px;margin-top:12px;background:#FFD700;color:#1A1814;
+  border:none;border-radius:var(--rs);font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
+.btn-pin-cancel{width:100%;min-height:44px;margin-top:8px;background:none;
+  color:rgba(255,255,255,.4);border:none;font-family:'Syne',sans-serif;font-size:14px;cursor:pointer;}
+
+/* UPI modal */
+.upi-amt{font-family:'DM Mono',monospace;font-size:34px;font-weight:700;color:var(--ok);text-align:center;margin:12px 0 4px;}
+.upi-lbl{font-size:13px;color:var(--mut);text-align:center;margin-bottom:18px;}
+.upi-id-box{background:var(--sur2);border-radius:var(--rs);padding:14px;margin-bottom:16px;text-align:center;}
+.upi-id-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--txt);word-break:break-all;margin-top:4px;}
+.upi-id-name{font-size:12px;color:var(--mut);}
+.btn-copy-upi{margin-top:8px;background:var(--sur);border:1px solid var(--bdr2);
+  border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;color:var(--acc);}
+.btn-upi-open{display:block;width:100%;min-height:52px;background:var(--ok);color:#fff;
+  border:none;border-radius:var(--rs);font-family:'Syne',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;margin-bottom:10px;text-decoration:none;text-align:center;line-height:52px;}
+.btn-upi-cancel{display:block;width:100%;min-height:44px;background:none;color:var(--mut);
+  border:none;font-family:'Syne',sans-serif;font-size:14px;cursor:pointer;}
+
+/* Confirm modal */
+.confirm-msg{font-size:15px;line-height:1.6;margin-bottom:20px;color:var(--txt);white-space:pre-line;}
+.confirm-btns{display:flex;gap:8px;}
+.confirm-btns button{flex:1;min-height:48px;border:none;border-radius:var(--rs);
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+.confirm-ok{background:var(--dan);color:#fff;}
+.confirm-no{background:var(--sur2);color:var(--mut);}
+
+/* Config screen CSS removed — config is baked in */
+
+.empty{text-align:center;padding:40px 20px;color:var(--mut);font-size:14px;line-height:1.8;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--txt);color:#fff;padding:11px 22px;border-radius:22px;font-size:13px;
+  font-weight:600;opacity:0;transition:all .3s;z-index:400;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- Firebase config is baked in — no setup screen needed -->
+
+<div class="app" id="mainApp">
+
+<!-- SYNC BAR -->
+<div class="sync-bar off" id="syncBar">
+  <span class="sync-dot"></span>
+  <span id="syncMsg">Connecting…</span>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="logo" id="logoTap">Flat<em>Tab</em></div>
+    <div class="who-badge" id="whoBadge">Who are you?</div>
+  </div>
+  <div class="who-bar" id="whoBar" style="display:none;">
+    <button class="who-btn" data-p="A" onclick="setUser('A')">Manohar</button>
+    <button class="who-btn" data-p="B" onclick="setUser('B')">Tarun</button>
+    <button class="who-btn" data-p="C" onclick="setUser('C')">Phanindra</button>
+    <button class="who-btn" data-p="D" onclick="setUser('D')">Sairam</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab on" id="tb-balances" onclick="showTab('balances')">Balances</div>
+  <div class="tab"    id="tb-buy"      onclick="showTab('buy')">Buy</div>
+  <div class="tab"    id="tb-consume"  onclick="showTab('consume')">Consume</div>
+  <div class="tab"    id="tb-log"      onclick="showTab('log')">Log</div>
+  <div class="tab"    id="tb-report"   onclick="showTab('report')">Report</div>
+</div>
+<div class="admin-bar" id="adminBar" style="display:none;">👑 ADMIN MODE — full access</div>
+
+<!-- BALANCES -->
+<div class="sec" id="tab-balances">
+  <div style="height:14px;"></div>
+  <div class="bal-grid" id="balGrid"></div>
+  <div class="slabel" style="margin-top:18px;">How to settle up</div>
+  <div id="settleList"></div>
+  <div class="slabel" style="margin-top:18px;">Eggs overview</div>
+  <div id="itemSummary" style="background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:14px;"></div>
+</div>
+
+<!-- BUY -->
+<div class="sec" id="tab-buy" style="display:none;">
+  <div style="height:14px;"></div>
+  <div id="buyWarn" class="nologin" style="display:none;">Select who you are first.</div>
+  <div class="fcard">
+    <div class="ftitle">🛒 Log a purchase</div>
+    <div class="frow"><label>Item</label>
+      <input type="text" id="buyItem" value="Eggs" readonly></div>
+    <div class="frow"><label>How many eggs?</label>
+      <input type="number" id="buyHowMany" placeholder="e.g. 30" min="1" step="1" inputmode="numeric"></div>
+    <div class="frow"><label>Total price (₹)</label>
+      <input type="number" id="buyPrice" placeholder="e.g. 90" min="0.01" step="0.01" inputmode="decimal"></div>
+    <div class="frow"><label>Paid by</label>
+      <select id="buyPayer">
+        <option value="">Select person…</option>
+        <option value="A">Manohar</option>
+        <option value="B">Tarun</option>
+        <option value="C">Phanindra</option>
+        <option value="D">Sairam</option>
+      </select></div>
+    <div id="buyStockNote" class="ibox" style="display:none;"></div>
+    <button class="btn-main" onclick="logBuy()">Record purchase</button>
+  </div>
+</div>
+
+<!-- CONSUME -->
+<div class="sec" id="tab-consume" style="display:none;">
+  <div style="height:14px;"></div>
+  <div id="conWarn" class="nologin" style="display:none;">Select who you are first.</div>
+  <div class="fcard">
+    <div class="ftitle">🍽 Log consumption</div>
+    <div class="frow"><label>Item</label>
+      <select id="conItem" onchange="onConItemChange()">
+        <option value="">Select item…</option>
+      </select></div>
+    <div id="conInfo"    class="ibox" style="display:none;"></div>
+    <div id="conNoStock" class="wbox" style="display:none;">No eggs left. Log a new purchase first.</div>
+    <div id="conForm" style="display:none;">
+      <div class="frow"><label>Eggs consumed by each person</label>
+        <div class="pq-grid">
+          <div class="pq-row"><span class="pdot da"></span><span class="pname" style="color:var(--ca);">Manohar</span>
+            <input type="number" class="qin" id="qA" value="" placeholder="0" min="0" step="1" inputmode="numeric" oninput="updateConPreview()" onfocus="clearIfZero(this)"></div>
+          <div class="pq-row"><span class="pdot db"></span><span class="pname" style="color:var(--cb);">Tarun</span>
+            <input type="number" class="qin" id="qB" value="" placeholder="0" min="0" step="1" inputmode="numeric" oninput="updateConPreview()" onfocus="clearIfZero(this)"></div>
+          <div class="pq-row"><span class="pdot dc"></span><span class="pname" style="color:var(--cc);">Phanindra</span>
+            <input type="number" class="qin" id="qC" value="" placeholder="0" min="0" step="1" inputmode="numeric" oninput="updateConPreview()" onfocus="clearIfZero(this)"></div>
+          <div class="pq-row"><span class="pdot dd"></span><span class="pname" style="color:var(--cd);">Sairam</span>
+            <input type="number" class="qin" id="qD" value="" placeholder="0" min="0" step="1" inputmode="numeric" oninput="updateConPreview()" onfocus="clearIfZero(this)"></div>
+        </div></div>
+      <div id="conPreview" class="pbox"  style="display:none;"></div>
+      <div id="conOver"    class="wbox"  style="display:none;"></div>
+      <button class="btn-main" id="conBtn" onclick="logConsume()">Record consumption</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG -->
+<div class="sec" id="tab-log" style="display:none;">
+  <div style="height:14px;"></div>
+  <div id="logList"></div>
+</div>
+
+<!-- REPORT -->
+<div class="sec" id="tab-report" style="display:none;">
+  <div style="height:14px;"></div>
+  <div class="rtoggle">
+    <button class="rtbtn on" id="rWeekBtn"   onclick="setRpt('week')">Week</button>
+    <button class="rtbtn"    id="rMonthBtn"  onclick="setRpt('month')">Month</button>
+    <button class="rtbtn"    id="rAllBtn"    onclick="setRpt('all')">All Time</button>
+    <button class="rtbtn"    id="rCustomBtn" onclick="setRpt('custom')">Custom</button>
+  </div>
+  <div id="customDateRow" style="display:none;margin-bottom:12px;">
+    <div class="date-filter-row"><label>From</label>
+      <input type="date" id="rptFrom" onchange="renderReport()"></div>
+    <div class="date-filter-row"><label>To</label>
+      <input type="date" id="rptTo"   onchange="renderReport()"></div>
+  </div>
+  <div id="rptContent"></div>
+</div>
+
+</div><!-- /app -->
+<div class="toast" id="toast"></div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg" id="editModal" style="display:none;" onclick="bgClose('editModal',closeEdit)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-title">
+      <span id="editModalTitle">Edit Entry</span>
+      <button class="btn-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div id="editModalBody"></div>
+  </div>
+</div>
+
+<!-- UPI MODAL -->
+<div class="modal-bg" id="upiModal" style="display:none;" onclick="bgClose('upiModal',closeUpi)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-title">
+      <span>Pay via UPI</span>
+      <button class="btn-close" onclick="closeUpi()">✕</button>
+    </div>
+    <div class="upi-amt" id="upiAmt"></div>
+    <div class="upi-lbl" id="upiLbl"></div>
+    <div class="upi-id-box">
+      <div class="upi-id-name" id="upiToName"></div>
+      <div class="upi-id-val"  id="upiToId"></div>
+      <button class="btn-copy-upi" onclick="copyUpiId()">Copy UPI ID</button>
+    </div>
+    <a id="upiLink" class="btn-upi-open" href="#" onclick="upiAppClicked()">Open UPI App (GPay / PhonePe / BHIM)</a>
+    <div style="font-size:12px;color:var(--mut);text-align:center;margin:10px 0 14px;line-height:1.6;">
+      After paying, ask <b id="upiReceiverName"></b> to tap<br><b>"Mark Received"</b> in their app.
+    </div>
+    <button class="btn-upi-cancel" onclick="closeUpi()">Close</button>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-bg" id="confirmModal" style="display:none;">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-title"><span id="confirmTitle">Confirm</span></div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="confirmAnswer(false)">Cancel</button>
+      <button class="confirm-ok" id="confirmOkBtn" onclick="confirmAnswer(true)">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN MODAL -->
+<div class="modal-bg" id="pinModal" style="display:none;" onclick="bgClose('pinModal',closePin)">
+  <div class="pin-sheet" onclick="event.stopPropagation()">
+    <div class="pin-title">🔐 Master Login</div>
+    <div class="pin-sub">Enter PIN to access admin mode</div>
+    <div class="frow">
+      <input type="password" class="pin-input" id="pinInput" inputmode="numeric"
+        maxlength="6" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPin()">
+    </div>
+    <div id="pinError" style="color:#ff6b6b;font-size:12px;text-align:center;margin-bottom:8px;display:none;">Wrong PIN.</div>
+    <button class="btn-pin-ok"     onclick="checkPin()">Enter</button>
+    <button class="btn-pin-cancel" onclick="closePin()">Cancel</button>
+  </div>
+</div>
+
+<!-- Firebase SDKs (compat version — works without bundler) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════
+   PERSONS & CONSTANTS
+═══════════════════════════════════════════ */
+const P = {
+  A:{name:'Manohar',   upi:'8897287780@axl',   color:'#3B5BDB'},
+  B:{name:'Tarun',     upi:'8688461147-2@ibl',  color:'#C2255C'},
+  C:{name:'Phanindra', upi:'8720886666@pthdfc', color:'#0C8599'},
+  D:{name:'Sairam',    upi:'9493876898@upi',     color:'#6741D9'}
+};
+const KEYS = ['A','B','C','D'];
+const MASTER_PIN = '1234'; /* ← CHANGE THIS before sharing */
+const LS_USER_KEY = 'ft_device_user';  /* localStorage key for device person */
+
+/* ═══════════════════════════════════════════
+   APP STATE (all data lives in Firebase)
+═══════════════════════════════════════════ */
+let db = null;           /* Firebase database reference */
+let fbRef = null;        /* root data reference */
+let curTab = 'balances';
+let rptPeriod = 'week';
+let isAdmin = false;
+let _confirmCb = null;
+let _logoTaps = 0, _logoTimer = null;
+
+/* In-memory copy of Firebase data — updated by realtime listener */
+let data = { purchases:{}, consumptions:{}, payments:{}, deleted:{} };
+
+/* Device-local: which person is logged in on THIS device */
+let deviceUser = localStorage.getItem(LS_USER_KEY) || null;
+
+/* ═══════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════ */
+function fmtDT(ts){
+  const d = new Date(ts);
+  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return String(d.getDate()).padStart(2,'0')+' '+mo[d.getMonth()]+' '+d.getFullYear()+
+    ', '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function toast(msg, ms=2600){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), ms);
+}
+function bgClose(id, fn){
+  return function(e){ if(e.target === document.getElementById(id)) fn(); };
+}
+document.getElementById('editModal').onclick   = bgClose('editModal',   closeEdit);
+document.getElementById('upiModal').onclick    = bgClose('upiModal',    closeUpi);
+document.getElementById('pinModal').onclick    = bgClose('pinModal',    closePin);
+
+/* ═══════════════════════════════════════════
+   FIREBASE SETUP
+═══════════════════════════════════════════ */
+function initFirebase(cfg){
+  try {
+    const app = firebase.initializeApp(cfg);
+    db = firebase.database(app);
+    fbRef = db.ref('flattab');
+    document.getElementById('mainApp').style.display = 'block';
+    setSyncStatus('syncing', 'Connecting…');
+    /* Real-time listener — fires whenever ANY device writes data */
+    fbRef.on('value', snapshot => {
+      const val = snapshot.val() || {};
+      data.purchases    = val.purchases    || {};
+      data.consumptions = val.consumptions || {};
+      data.payments     = val.payments     || {};
+      data.deleted      = val.deleted      || {};
+      setSyncStatus('ok', 'Live — synced');
+      redraw();
+    }, err => {
+      setSyncStatus('off', 'Connection error');
+      console.error(err);
+    });
+    initDeviceLock();
+  } catch(e) {
+    toast('Firebase error: '+e.message, 5000);
+    setSyncStatus('off', 'Config error');
+    console.error(e);
+  }
+}
+function setSyncStatus(state, msg){
+  const bar = document.getElementById('syncBar');
+  bar.className = 'sync-bar' + (state==='ok'?' ':state==='syncing'?' syncing':' off');
+  document.getElementById('syncMsg').textContent = msg;
+}
+
+/* Write to Firebase — all writes go here */
+function fbWrite(path, value){
+  setSyncStatus('syncing','Saving…');
+  return fbRef.child(path).set(value)
+    .then(()=>setSyncStatus('ok','Live — synced'))
+    .catch(e=>{ setSyncStatus('off','Save failed'); toast('Save failed: '+e.message,4000); });
+}
+function fbPush(path, value){
+  setSyncStatus('syncing','Saving…');
+  return fbRef.child(path).push(value)
+    .then(()=>setSyncStatus('ok','Live — synced'))
+    .catch(e=>{ setSyncStatus('off','Save failed'); toast('Save failed: '+e.message,4000); });
+}
+function fbRemove(path){
+  setSyncStatus('syncing','Saving…');
+  return fbRef.child(path).remove()
+    .then(()=>setSyncStatus('ok','Live — synced'))
+    .catch(e=>{ setSyncStatus('off','Save failed'); toast('Save failed: '+e.message,4000); });
+}
+
+/* ═══════════════════════════════════════════
+   DEVICE LOCK
+═══════════════════════════════════════════ */
+function initDeviceLock(){
+  if(deviceUser){
+    applyBadge(deviceUser);
+    lockBadge();
+  } else {
+    const badge = document.getElementById('whoBadge');
+    badge.textContent = 'Who are you?';
+    badge.classList.add('unlocked');
+    badge.onclick = toggleWhoBar;
+    document.getElementById('whoBar').style.display = 'flex';
+  }
+}
+function lockBadge(){
+  const badge = document.getElementById('whoBadge');
+  badge.classList.remove('unlocked');
+  badge.onclick = null;
+  document.getElementById('whoBar').style.display = 'none';
+}
+function toggleWhoBar(){
+  const wb = document.getElementById('whoBar');
+  wb.style.display = wb.style.display==='none' ? 'flex' : 'none';
+}
+function applyBadge(k){
+  const badge = document.getElementById('whoBadge');
+  badge.textContent = 'Logged in as '+P[k].name;
+  badge.style.background = P[k].color+'18';
+  badge.style.color = P[k].color;
+  badge.style.borderColor = P[k].color+'40';
+  badge.className = 'who-badge';
+  document.querySelectorAll('.who-btn').forEach(b=>b.classList.toggle('sel',b.dataset.p===k));
+}
+function setUser(k){
+  deviceUser = k;
+  localStorage.setItem(LS_USER_KEY, k);
+  applyBadge(k);
+  lockBadge();
+  document.getElementById('buyPayer').value = k;
+  toast('Logged in as '+P[k].name);
+  redraw();
+}
+
+/* Logo 5-tap → admin PIN */
+document.getElementById('logoTap').addEventListener('click',()=>{
+  _logoTaps++;
+  clearTimeout(_logoTimer);
+  _logoTimer = setTimeout(()=>_logoTaps=0, 1800);
+  if(_logoTaps >= 5){ _logoTaps=0; openPin(); }
+});
+
+/* ═══════════════════════════════════════════
+   ADMIN / PIN
+═══════════════════════════════════════════ */
+function openPin(){
+  document.getElementById('pinInput').value='';
+  document.getElementById('pinError').style.display='none';
+  document.getElementById('pinModal').style.display='flex';
+  setTimeout(()=>document.getElementById('pinInput').focus(),100);
+}
+function closePin(){ document.getElementById('pinModal').style.display='none'; }
+function checkPin(){
+  if(document.getElementById('pinInput').value.trim()===MASTER_PIN){
+    closePin(); enterAdmin();
+  } else {
+    document.getElementById('pinError').style.display='block';
+    document.getElementById('pinInput').value='';
+  }
+}
+function enterAdmin(){
+  isAdmin = true;
+  const badge = document.getElementById('whoBadge');
+  badge.textContent = '👑 Admin';
+  badge.className = 'who-badge admin-badge';
+  badge.onclick = showAdminPanel;
+  document.getElementById('adminBar').style.display='block';
+  toast('Admin mode active',3000);
+  redraw();
+}
+function exitAdmin(){
+  isAdmin = false;
+  document.getElementById('adminBar').style.display='none';
+  closeEdit();
+  if(deviceUser) applyBadge(deviceUser);
+  else {
+    const b = document.getElementById('whoBadge');
+    b.textContent='Who are you?'; b.className='who-badge unlocked'; b.onclick=toggleWhoBar;
+  }
+  lockBadge(); redraw();
+}
+function showAdminPanel(){
+  document.getElementById('editModalTitle').textContent='👑 Admin Panel';
+  document.getElementById('editModalBody').innerHTML =
+    '<div style="background:#1A1814;border-radius:8px;padding:12px;margin-bottom:16px;color:rgba(255,255,255,.55);font-size:12px;line-height:1.7;">'+
+    'Admin sees all entries including deleted ones.<br>Session only — exits on page refresh.</div>'+
+    '<button class="btn-admin-action" onclick="adminClearPayments()">🗑 Clear all payment entries</button>'+
+    '<button class="btn-admin-action" onclick="adminClearAll()">⚠️ Reset ALL data</button>'+
+    '<button class="btn-admin-action" onclick="adminSwitchDevice()">🔄 Switch this device person</button>'+
+    '<div style="height:8px;"></div>'+
+    '<button class="btn-admin-exit" onclick="exitAdmin()">Exit Admin Mode</button>';
+  document.getElementById('editModal').style.display='flex';
+}
+function adminClearPayments(){
+  closeEdit();
+  showConfirm('Delete ALL payment entries?','Yes, clear',yes=>{
+    if(!yes)return;
+    fbWrite('flattab/payments',null).then(()=>toast('All payments cleared!'));
+  });
+}
+function adminClearAll(){
+  closeEdit();
+  showConfirm('RESET ALL DATA?\nThis deletes everything and cannot be undone.','Yes, reset',yes=>{
+    if(!yes)return;
+    fbRef.set(null).then(()=>toast('All data cleared!'));
+  });
+}
+function adminSwitchDevice(){
+  closeEdit();
+  showConfirm('Switch person on this device?','Yes, switch',yes=>{
+    if(!yes)return;
+    deviceUser=null; localStorage.removeItem(LS_USER_KEY); isAdmin=false;
+    document.getElementById('adminBar').style.display='none';
+    initDeviceLock(); redraw();
+  });
+}
+
+/* ═══════════════════════════════════════════
+   CONFIRM MODAL
+═══════════════════════════════════════════ */
+function showConfirm(msg, okLabel, cb){
+  _confirmCb = cb;
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmOkBtn').textContent = okLabel || 'OK';
+  document.getElementById('confirmOkBtn').style.background = '';
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+function confirmAnswer(yes){
+  document.getElementById('confirmModal').style.display='none';
+  if(_confirmCb){ const cb=_confirmCb; _confirmCb=null; cb(yes); }
+}
+
+/* ═══════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════ */
+function showTab(name){
+  curTab=name;
+  ['balances','buy','consume','log','report'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = t===name?'block':'none';
+    document.getElementById('tb-'+t).classList.toggle('on', t===name);
+  });
+  if(name==='balances') renderBalances();
+  if(name==='buy')      renderBuy();
+  if(name==='consume')  renderConsume();
+  if(name==='log')      renderLog();
+  if(name==='report')   renderReport();
+}
+function redraw(){ showTab(curTab); }
+
+/* ═══════════════════════════════════════════
+   STOCK (computed from in-memory data)
+═══════════════════════════════════════════ */
+function getStock(){
+  const m = {};
+  Object.values(data.purchases).forEach(p=>{
+    const k = p.item.toLowerCase();
+    if(!m[k]) m[k]={name:p.item,bought:0,cost:0,unit:p.unit||'eggs',consumed:0};
+    m[k].bought += p.qty; m[k].cost += p.priceTotal; m[k].unit = p.unit||m[k].unit;
+  });
+  Object.values(data.consumptions).forEach(c=>{
+    const k = c.item.toLowerCase(); if(!m[k])return;
+    m[k].consumed += KEYS.reduce((s,n)=>s+(c.quantities[n]||0),0);
+  });
+  Object.values(m).forEach(s=>{
+    s.remaining = parseFloat((s.bought-s.consumed).toFixed(4));
+    s.perUnit = s.cost/s.bought;
+  });
+  return m;
+}
+
+/* ═══════════════════════════════════════════
+   NET BALANCES
+═══════════════════════════════════════════ */
+function computeNet(){
+  const net={A:0,B:0,C:0,D:0};
+  const stk=getStock();
+  Object.values(data.purchases).forEach(p=>net[p.paidBy]+=p.priceTotal);
+  Object.values(data.consumptions).forEach(c=>{
+    const s=stk[c.item.toLowerCase()]; if(!s)return;
+    KEYS.forEach(n=>net[n]-=(c.quantities[n]||0)*s.perUnit);
+  });
+  Object.values(data.payments).forEach(p=>{net[p.from]-=p.amount; net[p.to]+=p.amount;});
+  return net;
+}
+function simplify(net){
+  const cr=KEYS.map(n=>({n,b:net[n]})).filter(x=>x.b>0.01).sort((a,b)=>b.b-a.b);
+  const db=KEYS.map(n=>({n,b:net[n]})).filter(x=>x.b<-0.01).sort((a,b)=>a.b-b.b);
+  const tx=[]; let ci=0,di=0;
+  while(ci<cr.length && di<db.length){
+    const a=Math.min(cr[ci].b,-db[di].b);
+    tx.push({from:db[di].n,to:cr[ci].n,amount:a});
+    cr[ci].b-=a; db[di].b+=a;
+    if(cr[ci].b<0.01)ci++; if(db[di].b>-0.01)di++;
+  }
+  return tx;
+}
+
+/* ═══════════════════════════════════════════
+   RENDER BALANCES
+═══════════════════════════════════════════ */
+function renderBalances(){
+  const net=computeNet(); const u=deviceUser;
+  document.getElementById('balGrid').innerHTML=KEYS.map(k=>{
+    const v=net[k];
+    const cls=v>0.01?'pos':v<-0.01?'neg':'zero';
+    const lbl=v>0.01?'to receive':v<-0.01?'owes':'all clear';
+    const sgn=v>0.01?'+':'';
+    return '<div class="bal-card" data-p="'+k+'">'+
+      '<div class="bal-name" style="color:'+P[k].color+'">'+P[k].name+'</div>'+
+      '<div class="bal-amt '+cls+'">'+sgn+'₹'+Math.abs(v).toFixed(2)+'</div>'+
+      '<div class="bal-sub">'+lbl+'</div></div>';
+  }).join('');
+
+  const txns=simplify(net);
+  const sl=document.getElementById('settleList');
+  if(!txns.length){
+    sl.innerHTML='<div style="text-align:center;padding:16px 0;font-size:13px;color:var(--mut);">All settled up 🎉</div>';
+  } else {
+    const visibleTxns = (!u||isAdmin) ? txns : txns.filter(t=>t.from===u||t.to===u);
+    if(!visibleTxns.length && u && !isAdmin){
+      sl.innerHTML='<div style="text-align:center;padding:16px 0;font-size:13px;color:var(--mut);">Nothing to settle for you 👍</div>';
+    } else {
+      sl.innerHTML = visibleTxns.map((t,i)=>{
+        let act='';
+        if(u===t.from){
+          act='<div class="settle-act"><button class="btn-settle pn" id="spn'+i+'">Open UPI App — Pay ₹'+t.amount.toFixed(2)+'</button></div>';
+        } else if(u===t.to){
+          act='<div class="settle-act"><button class="btn-settle mr" id="smr'+i+'">Mark Received from '+P[t.from].name+'</button></div>';
+        } else {
+          act='<div class="settle-upi">UPI: '+P[t.to].upi+'</div>';
+        }
+        return '<div class="settle-row"><div class="settle-top">'+
+          '<span class="dot d'+t.from.toLowerCase()+'"></span>'+
+          '<span style="font-weight:700;color:'+P[t.from].color+'">'+P[t.from].name+'</span>'+
+          '<span style="color:var(--mut);font-size:16px;">→</span>'+
+          '<span class="dot d'+t.to.toLowerCase()+'"></span>'+
+          '<span style="font-weight:700;color:'+P[t.to].color+'">'+P[t.to].name+'</span>'+
+          '<span class="settle-amt">₹'+t.amount.toFixed(2)+'</span>'+
+          '</div>'+act+'</div>';
+      }).join('');
+      visibleTxns.forEach((t,i)=>{
+        const pn=document.getElementById('spn'+i);
+        const mr=document.getElementById('smr'+i);
+        if(pn) pn.onclick=()=>openUpi(t.from,t.to,t.amount);
+        if(mr) mr.onclick=()=>doMarkRcv(t.from,t.to,t.amount);
+      });
+    }
+  }
+
+  const stk=getStock(); const items=Object.values(stk);
+  const is=document.getElementById('itemSummary');
+  if(!items.length){
+    is.innerHTML='<div style="font-size:13px;color:var(--mut);text-align:center;padding:8px 0;">No purchases yet.</div>';
+    return;
+  }
+  is.innerHTML=items.map(s=>{
+    const pct=s.bought?Math.min(100,Math.round(s.consumed/s.bought*100)):0;
+    return '<div style="margin-bottom:14px;">'+
+      '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:3px;">'+
+      '<span>'+s.name+'</span>'+
+      '<span style="color:var(--mut);font-family:\'DM Mono\',monospace;font-size:11px;">₹'+s.perUnit.toFixed(2)+'/egg</span></div>'+
+      '<div class="pbar"><div class="pfill" style="width:'+pct+'%"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-top:2px;">'+
+      '<span>'+s.consumed+' eggs used</span>'+
+      '<span><b style="color:var(--txt)">'+s.remaining+'</b> of '+s.bought+' left</span></div></div>';
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   UPI
+═══════════════════════════════════════════ */
+function openUpi(from,to,amount){
+  document.getElementById('upiAmt').textContent='₹'+amount.toFixed(2);
+  document.getElementById('upiLbl').textContent=P[from].name+' → '+P[to].name;
+  document.getElementById('upiToName').textContent='Pay to: '+P[to].name;
+  document.getElementById('upiToId').textContent=P[to].upi;
+  document.getElementById('upiReceiverName').textContent=P[to].name;
+  document.getElementById('upiLink').href=
+    'upi://pay?pa='+P[to].upi+'&pn='+encodeURIComponent(P[to].name)+'&am='+amount.toFixed(2)+'&cu=INR&tn=FlatTab';
+  document.getElementById('upiModal').style.display='flex';
+}
+function upiAppClicked(){ setTimeout(closeUpi,400); }
+function copyUpiId(){
+  const id=document.getElementById('upiToId').textContent;
+  if(navigator.clipboard) navigator.clipboard.writeText(id).then(()=>toast('UPI ID copied!'));
+  else toast('UPI: '+id,4000);
+}
+function closeUpi(){ document.getElementById('upiModal').style.display='none'; }
+
+function doMarkRcv(from,to,amount){
+  showConfirm('Mark ₹'+amount.toFixed(2)+' as received from '+P[from].name+'?','Yes, received',yes=>{
+    if(!yes)return;
+    fbPush('flattab/payments',{from,to,amount:parseFloat(amount.toFixed(2)),ts:Date.now()})
+      .then(()=>toast('₹'+amount.toFixed(2)+' receipt recorded!'));
+  });
+  document.getElementById('confirmOkBtn').style.background=P[to].color;
+}
+
+/* ═══════════════════════════════════════════
+   BUY
+═══════════════════════════════════════════ */
+function renderBuy(){
+  document.getElementById('buyWarn').style.display=deviceUser?'none':'block';
+  if(deviceUser) document.getElementById('buyPayer').value=deviceUser;
+  const stk=getStock(); const s=stk['eggs'];
+  const n=document.getElementById('buyStockNote');
+  if(s){n.style.display='block';n.textContent='Current stock: '+s.remaining+' eggs remaining';}
+  else n.style.display='none';
+}
+function logBuy(){
+  if(!deviceUser){toast('Select who you are first');return;}
+  const qty=parseInt(document.getElementById('buyHowMany').value);
+  const pr=parseFloat(document.getElementById('buyPrice').value);
+  const py=document.getElementById('buyPayer').value;
+  if(!qty||qty<=0){toast('Enter how many eggs');return;}
+  if(!pr||pr<=0){toast('Enter the total price');return;}
+  if(!py){toast('Select who paid');return;}
+  fbPush('flattab/purchases',{item:'Eggs',qty,unit:'eggs',priceTotal:pr,paidBy:py,ts:Date.now()})
+    .then(()=>{
+      document.getElementById('buyHowMany').value='';
+      document.getElementById('buyPrice').value='';
+      toast('Purchase recorded!'); showTab('balances');
+    });
+}
+
+/* ═══════════════════════════════════════════
+   CONSUME
+═══════════════════════════════════════════ */
+function clearIfZero(el){ if(el.value==='0'||el.value==='')el.value=''; }
+function renderConsume(){
+  document.getElementById('conWarn').style.display=deviceUser?'none':'block';
+  const sel=document.getElementById('conItem');
+  const stk=getStock(); const prev=sel.value;
+  sel.innerHTML='<option value="">Select item…</option>';
+  Object.values(stk).forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s.name;
+    o.textContent=s.name+' ('+s.remaining+' '+s.unit+' left)';
+    if(s.remaining<=0){o.disabled=true;o.textContent+=' — out of stock';}
+    sel.appendChild(o);
+  });
+  if(prev) sel.value=prev;
+  ['conInfo','conNoStock','conForm','conPreview','conOver'].forEach(id=>document.getElementById(id).style.display='none');
+  KEYS.forEach(k=>{ document.getElementById('q'+k).value=''; });
+}
+function onConItemChange(){
+  const item=document.getElementById('conItem').value;
+  const stk=getStock();
+  KEYS.forEach(k=>{ document.getElementById('q'+k).value=''; });
+  ['conPreview','conOver'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('conBtn').disabled=false;
+  if(!item){['conInfo','conNoStock','conForm'].forEach(id=>document.getElementById(id).style.display='none');return;}
+  const s=stk[item.toLowerCase()]; if(!s)return;
+  document.getElementById('conInfo').style.display='block';
+  document.getElementById('conInfo').textContent='₹'+s.perUnit.toFixed(2)+' per egg · '+s.remaining+' eggs left';
+  if(s.remaining<=0){
+    document.getElementById('conNoStock').style.display='block';
+    document.getElementById('conForm').style.display='none';
+  } else {
+    document.getElementById('conNoStock').style.display='none';
+    document.getElementById('conForm').style.display='block';
+  }
+}
+function updateConPreview(){
+  const item=document.getElementById('conItem').value; if(!item)return;
+  const stk=getStock(); const s=stk[item.toLowerCase()]; if(!s)return;
+  const qs={};
+  KEYS.forEach(k=>qs[k]=parseFloat(document.getElementById('q'+k).value||'0')||0);
+  const total=KEYS.reduce((a,k)=>a+qs[k],0);
+  const prev=document.getElementById('conPreview');
+  const ow=document.getElementById('conOver');
+  const btn=document.getElementById('conBtn');
+  if(total>s.remaining+0.001){
+    ow.textContent='Total ('+total+' eggs) exceeds '+s.remaining+' remaining.';
+    ow.style.display='block'; prev.style.display='none'; btn.disabled=true;
+  } else {
+    ow.style.display='none'; btn.disabled=false;
+    if(total>0){
+      prev.innerHTML=KEYS.filter(k=>qs[k]>0).map(k=>
+        '<span style="color:'+P[k].color+';font-weight:700;">'+P[k].name+'</span> — '+qs[k]+' eggs = ₹'+(qs[k]*s.perUnit).toFixed(2)
+      ).join('<br>');
+      prev.style.display='block';
+    } else prev.style.display='none';
+  }
+}
+function logConsume(){
+  if(!deviceUser){toast('Select who you are first');return;}
+  const item=document.getElementById('conItem').value; if(!item){toast('Select an item');return;}
+  const qs={};
+  KEYS.forEach(k=>qs[k]=parseFloat(document.getElementById('q'+k).value||'0')||0);
+  const total=KEYS.reduce((a,k)=>a+qs[k],0);
+  if(total<=0){toast('Enter at least one value');return;}
+  const stk=getStock(); const s=stk[item.toLowerCase()];
+  if(!s||s.remaining<=0){toast('No stock remaining!');return;}
+  if(total>s.remaining+0.001){toast('Exceeds remaining stock!');return;}
+  fbPush('flattab/consumptions',{item,quantities:qs,ts:Date.now()})
+    .then(()=>{ toast('Consumption recorded!'); showTab('balances'); });
+}
+
+/* ═══════════════════════════════════════════
+   LOG + EDIT
+═══════════════════════════════════════════ */
+function renderLog(){
+  const stk=getStock();
+  const purchases    = Object.entries(data.purchases).map(([id,v])=>({...v,id,_t:'buy'}));
+  const consumptions = Object.entries(data.consumptions).map(([id,v])=>({...v,id,_t:'eat'}));
+  const payments     = Object.entries(data.payments).map(([id,v])=>({...v,id,_t:'pay'}));
+  const deleted      = isAdmin ? Object.entries(data.deleted||{}).map(([id,v])=>({...v,id,_t:'del'})) : [];
+  const all = [...purchases,...consumptions,...payments].sort((a,b)=>b.ts-a.ts);
+  const deletedSorted = deleted.sort((a,b)=>b._deletedAt-a._deletedAt);
+
+  const ll=document.getElementById('logList');
+  if(!all.length && !deletedSorted.length){
+    ll.innerHTML='<div class="empty">No entries yet.<br>Start by logging a purchase!</div>';
+    return;
+  }
+
+  const editBtn=(id,t)=>'<button class="btn-edit" onclick="openEdit(\''+id+'\',\''+t+'\')">Edit</button>';
+  const delBtnPay=(id)=>'<button class="btn-edit" style="color:var(--dan);" onclick="adminDeletePayment(\''+id+'\')">Delete</button>';
+
+  let html = all.map(e=>{
+    const dt=fmtDT(e.ts);
+    if(e._t==='buy'){
+      const cpu=(e.priceTotal/e.qty).toFixed(2);
+      return '<div class="litem">'+
+        '<div class="ltop"><span class="lname">'+e.item+'</span>'+
+        '<div class="ltop-right"><span class="lbadge buy">BOUGHT</span>'+editBtn(e.id,'buy')+'</div></div>'+
+        '<div class="ldetail">'+e.qty+' eggs · ₹'+e.priceTotal+' · ₹'+cpu+'/egg</div>'+
+        '<div class="lpersons"><div class="lperson">'+
+        '<span class="dot d'+e.paidBy.toLowerCase()+'"></span>'+
+        '<span style="color:'+P[e.paidBy].color+';font-weight:700;">'+P[e.paidBy].name+'</span>'+
+        '<span style="color:var(--mut);"> paid</span></div></div>'+
+        '<div class="ltime">'+dt+'</div></div>';
+    }
+    if(e._t==='eat'){
+      const s=stk[e.item.toLowerCase()]; const cpu=s?s.perUnit:0; const unit=s?s.unit:'eggs';
+      const parts=KEYS.filter(k=>(e.quantities[k]||0)>0).map(k=>
+        '<div class="lperson"><span class="dot d'+k.toLowerCase()+'"></span>'+
+        '<span style="color:'+P[k].color+';font-weight:700;">'+P[k].name+'</span>'+
+        '<span style="color:var(--mut);"> '+e.quantities[k]+' '+unit+' = ₹'+(e.quantities[k]*cpu).toFixed(2)+'</span></div>'
+      ).join('');
+      return '<div class="litem">'+
+        '<div class="ltop"><span class="lname">'+e.item+'</span>'+
+        '<div class="ltop-right"><span class="lbadge eat">CONSUMED</span>'+editBtn(e.id,'eat')+'</div></div>'+
+        '<div class="lpersons">'+parts+'</div>'+
+        '<div class="ltime">'+dt+'</div></div>';
+    }
+    const payDelBtn = isAdmin ? delBtnPay(e.id) : '';
+    return '<div class="litem">'+
+      '<div class="ltop"><span class="lname">Payment</span>'+
+      '<div class="ltop-right"><span class="lbadge pay">PAYMENT</span>'+payDelBtn+'</div></div>'+
+      '<div class="ldetail">'+
+      '<span style="color:'+P[e.from].color+';font-weight:700;">'+P[e.from].name+'</span> → '+
+      '<span style="color:'+P[e.to].color+';font-weight:700;">'+P[e.to].name+'</span> · ₹'+e.amount.toFixed(2)+
+      '</div><div class="ltime">'+dt+'</div></div>';
+  }).join('');
+
+  /* Deleted entries section — admin only */
+  if(deletedSorted.length){
+    html += '<div style="margin-top:20px;margin-bottom:8px;padding:10px 12px;background:var(--dan-bg);border-radius:var(--rs);font-size:11px;font-weight:700;color:var(--dan);letter-spacing:.05em;text-transform:uppercase;">'+
+      '🗑 Deleted entries — admin view only</div>';
+    html += deletedSorted.map(e=>{
+      const dt=fmtDT(e.ts);
+      const delDt=fmtDT(e._deletedAt);
+      const delBy=e._deletedBy==='admin'?'Admin':(P[e._deletedBy]?P[e._deletedBy].name:e._deletedBy);
+      let detail='';
+      if(e._origType==='buy') detail=e.qty+' eggs · ₹'+e.priceTotal+' — paid by '+(P[e.paidBy]?P[e.paidBy].name:e.paidBy);
+      else if(e._origType==='eat'){
+        const parts=KEYS.filter(k=>(e.quantities&&e.quantities[k]||0)>0).map(k=>P[k].name+' '+e.quantities[k]).join(', ');
+        detail='Consumed: '+parts;
+      } else if(e._origType==='pay') detail=(P[e.from]?P[e.from].name:e.from)+' → '+(P[e.to]?P[e.to].name:e.to)+' · ₹'+e.amount.toFixed(2);
+      const typeLabel=e._origType==='buy'?'BOUGHT':e._origType==='eat'?'CONSUMED':'PAYMENT';
+      return '<div class="litem deleted-item">'+
+        '<div class="ltop"><span class="lname" style="text-decoration:line-through;">'+(e.item||'Payment')+'</span>'+
+        '<div class="ltop-right"><span class="lbadge del">DELETED</span><span class="lbadge eat">'+typeLabel+'</span></div></div>'+
+        '<div class="ldetail">'+detail+'</div>'+
+        '<div class="ltime">Created: '+dt+'</div>'+
+        '<div class="ltime" style="color:var(--dan);">Deleted by '+delBy+' on '+delDt+'</div></div>';
+    }).join('');
+  }
+  ll.innerHTML = html;
+}
+
+/* ── EDIT / DELETE ── */
+function openEdit(id,type){
+  document.getElementById('editModalTitle').textContent=type==='buy'?'Edit Purchase':'Edit Consumption';
+  const body=document.getElementById('editModalBody');
+  if(type==='buy'){
+    const e=data.purchases[id]; if(!e)return;
+    body.innerHTML=
+      '<div class="frow"><label>How many eggs?</label>'+
+      '<input type="number" id="eQty" value="'+e.qty+'" min="1" step="1" inputmode="numeric"></div>'+
+      '<div class="frow"><label>Total price (₹)</label>'+
+      '<input type="number" id="ePrice" value="'+e.priceTotal+'" min="0.01" step="0.01" inputmode="decimal"></div>'+
+      '<div class="frow"><label>Paid by</label><select id="ePayer">'+
+      KEYS.map(k=>'<option value="'+k+'"'+(e.paidBy===k?' selected':'')+'>'+P[k].name+'</option>').join('')+
+      '</select></div>'+
+      '<button class="btn-main" onclick="saveEditBuy(\''+id+'\')">Save changes</button>'+
+      '<button class="btn-main btn-danger" style="margin-top:8px;" onclick="doDelete(\''+id+'\',\'buy\')">🗑 Delete this entry</button>';
+  } else if(type==='eat'){
+    const e=data.consumptions[id]; if(!e)return;
+    const stk=getStock(); const s=stk[e.item.toLowerCase()]; const cpu=s?s.perUnit:0;
+    body.innerHTML=
+      '<div class="ibox" style="margin-bottom:12px;">₹'+cpu.toFixed(2)+' per egg</div>'+
+      '<div class="frow"><label>Eggs consumed by each person</label><div class="pq-grid">'+
+      KEYS.map(k=>
+        '<div class="pq-row"><span class="pdot d'+k.toLowerCase()+'"></span>'+
+        '<span class="pname" style="color:'+P[k].color+';">'+P[k].name+'</span>'+
+        '<input type="number" class="qin" id="eq'+k+'" value="'+(e.quantities[k]||'')+
+        '" placeholder="0" min="0" step="1" inputmode="numeric" onfocus="clearIfZero(this)"></div>'
+      ).join('')+
+      '</div></div>'+
+      '<button class="btn-main" onclick="saveEditConsume(\''+id+'\')">Save changes</button>'+
+      '<button class="btn-main btn-danger" style="margin-top:8px;" onclick="doDelete(\''+id+'\',\'eat\')">🗑 Delete this entry</button>';
+  }
+  document.getElementById('editModal').style.display='flex';
+}
+function closeEdit(){ document.getElementById('editModal').style.display='none'; }
+function saveEditBuy(id){
+  const qty=parseInt(document.getElementById('eQty').value);
+  const pr=parseFloat(document.getElementById('ePrice').value);
+  const py=document.getElementById('ePayer').value;
+  if(!qty||qty<=0){toast('Enter valid quantity');return;}
+  if(!pr||pr<=0){toast('Enter valid price');return;}
+  const orig=data.purchases[id];
+  fbWrite('flattab/purchases/'+id,{...orig,qty,priceTotal:pr,paidBy:py})
+    .then(()=>{closeEdit();toast('Entry updated!');});
+}
+function saveEditConsume(id){
+  const qs={};
+  KEYS.forEach(k=>qs[k]=parseFloat(document.getElementById('eq'+k).value||'0')||0);
+  const total=KEYS.reduce((a,k)=>a+qs[k],0);
+  if(total<=0){toast('Enter at least one value');return;}
+  const orig=data.consumptions[id];
+  const stk=getStock(); const s=stk[orig.item.toLowerCase()];
+  if(s){
+    const otherUsed=s.consumed-KEYS.reduce((a,k)=>a+(orig.quantities[k]||0),0);
+    if(total>s.bought-otherUsed+0.001){toast('Exceeds available stock!');return;}
+  }
+  fbWrite('flattab/consumptions/'+id,{...orig,quantities:qs})
+    .then(()=>{closeEdit();toast('Entry updated!');});
+}
+function doDelete(id,type){
+  closeEdit();
+  showConfirm('Delete this entry permanently?\nThis cannot be undone.','Delete',yes=>{
+    if(!yes)return;
+    const path='flattab/'+(type==='buy'?'purchases':'consumptions')+'/'+id;
+    const entry=type==='buy'?data.purchases[id]:data.consumptions[id];
+    if(entry){
+      fbPush('flattab/deleted',{...entry,_origType:type,_deletedBy:deviceUser||'unknown',_deletedAt:Date.now()});
+    }
+    fbRemove(path).then(()=>toast('Entry deleted!'));
+  });
+}
+function adminDeletePayment(id){
+  showConfirm('Delete this payment entry?','Delete',yes=>{
+    if(!yes)return;
+    const entry=data.payments[id];
+    if(entry){
+      fbPush('flattab/deleted',{...entry,_origType:'pay',_deletedBy:'admin',_deletedAt:Date.now()});
+    }
+    fbRemove('flattab/payments/'+id).then(()=>toast('Payment deleted!'));
+  });
+}
+
+/* ═══════════════════════════════════════════
+   REPORT
+═══════════════════════════════════════════ */
+function setRpt(p){
+  rptPeriod=p;
+  ['week','month','all','custom'].forEach(x=>{
+    const b=document.getElementById('r'+x.charAt(0).toUpperCase()+x.slice(1)+'Btn');
+    if(b) b.classList.toggle('on',x===p);
+  });
+  document.getElementById('customDateRow').style.display=p==='custom'?'block':'none';
+  if(p==='custom'){
+    if(!document.getElementById('rptFrom').value) document.getElementById('rptFrom').value=todayStr();
+    if(!document.getElementById('rptTo').value)   document.getElementById('rptTo').value=todayStr();
+  }
+  renderReport();
+}
+function periodSince(p){
+  const n=new Date();
+  if(p==='week'){const d=new Date(n);d.setDate(d.getDate()-d.getDay());d.setHours(0,0,0,0);return d.getTime();}
+  if(p==='month') return new Date(n.getFullYear(),n.getMonth(),1).getTime();
+  if(p==='custom'){const v=document.getElementById('rptFrom').value;return v?new Date(v).getTime():0;}
+  return 0;
+}
+function periodUntil(p){
+  if(p==='custom'){
+    const v=document.getElementById('rptTo').value;
+    if(v){const d=new Date(v);d.setHours(23,59,59,999);return d.getTime();}
+  }
+  return Date.now()+1000;
+}
+function renderReport(){
+  const since=periodSince(rptPeriod), until=periodUntil(rptPeriod);
+  const stk=getStock();
+  const buyAmt={A:0,B:0,C:0,D:0}, buyCnt={A:0,B:0,C:0,D:0};
+  Object.values(data.purchases).filter(p=>p.ts>=since&&p.ts<=until).forEach(p=>{
+    buyAmt[p.paidBy]+=p.priceTotal; buyCnt[p.paidBy]++;
+  });
+  const conU={A:0,B:0,C:0,D:0}, conC={A:0,B:0,C:0,D:0};
+  Object.values(data.consumptions).filter(c=>c.ts>=since&&c.ts<=until).forEach(c=>{
+    const s=stk[c.item.toLowerCase()]; const cpu=s?s.perUnit:0;
+    KEYS.forEach(k=>{conU[k]+=(c.quantities[k]||0);conC[k]+=(c.quantities[k]||0)*cpu;});
+  });
+  function bars(d,fmt){
+    const mx=Math.max(...Object.values(d),1);
+    return KEYS.map(k=>{
+      const v=d[k]; const pct=Math.round(v/mx*100);
+      return '<div class="rbrow"><div class="rbtop">'+
+        '<span class="rbname" style="color:'+P[k].color+'">'+P[k].name+'</span>'+
+        '<span class="rbval">'+fmt(k,v)+'</span></div>'+
+        '<div class="rbtrack"><div class="rbfill" style="width:'+pct+'%;background:'+P[k].color+';"></div></div></div>';
+    }).join('');
+  }
+  const lbl=rptPeriod==='week'?'This week':rptPeriod==='month'?'This month':rptPeriod==='custom'?'Custom range':'All time';
+  document.getElementById('rptContent').innerHTML=
+    '<div class="rcrd"><div class="rtitle">💸 Who paid more — '+lbl+'</div>'+
+    bars(buyAmt,(k,v)=>'₹'+v.toFixed(2)+' ('+buyCnt[k]+'x)')+'</div>'+
+    '<div class="rcrd"><div class="rtitle">🍳 Eggs consumed — '+lbl+'</div>'+
+    bars(conU,(k,v)=>v+' eggs')+'</div>'+
+    '<div class="rcrd"><div class="rtitle">₹ Consumption cost — '+lbl+'</div>'+
+    bars(conC,(k,v)=>'₹'+v.toFixed(2))+'</div>';
+}
+
+/* ═══════════════════════════════════════════
+   INIT — Firebase config baked in
+═══════════════════════════════════════════ */
+const FIREBASE_CFG = {
+  apiKey:            "AIzaSyD5LizPQWmagV2h--5udxcCosUjh_mC7J0",
+  authDomain:        "flattab-98cb9.firebaseapp.com",
+  databaseURL:       "https://flattab-98cb9-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "flattab-98cb9",
+  storageBucket:     "flattab-98cb9.firebasestorage.app",
+  messagingSenderId: "672836983894",
+  appId:             "1:672836983894:web:35173ce0bf20ce652eeff7"
+};
+initFirebase(FIREBASE_CFG);
+</script>
+</body>
+</html>
