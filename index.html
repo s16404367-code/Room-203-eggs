@@ -270,8 +270,6 @@ input:focus:not([readonly]),select:focus{border-color:var(--acc);outline:2px sol
       <input type="number" id="buyHowMany" placeholder="e.g. 30" min="1" step="1" inputmode="numeric"></div>
     <div class="frow"><label>Total price (₹)</label>
       <input type="number" id="buyPrice" placeholder="e.g. 90" min="0.01" step="0.01" inputmode="decimal"></div>
-    <div class="frow"><label>Remarks (Optional)</label>
-      <input type="text" id="buyRemarks" placeholder="e.g. Bought from D-Mart"></div>
     <div class="frow"><label>Paid by</label>
       <select id="buyPayer">
         <option value="">Select person…</option>
@@ -311,8 +309,6 @@ input:focus:not([readonly]),select:focus{border-color:var(--acc);outline:2px sol
         </div></div>
       <div id="conPreview" class="pbox"  style="display:none;"></div>
       <div id="conOver"    class="wbox"  style="display:none;"></div>
-      <div class="frow"><label>Remarks (Optional)</label>
-      <input type="text" id="conRemarks" placeholder="e.g. Breakfast"></div>
       <button class="btn-main" id="conBtn" onclick="logConsume()">Record consumption</button>
     </div>
   </div>
@@ -870,15 +866,13 @@ function logBuy(){
   const qty=parseInt(document.getElementById('buyHowMany').value);
   const pr=parseFloat(document.getElementById('buyPrice').value);
   const py=document.getElementById('buyPayer').value;
-  const remarks=document.getElementById('buyRemarks').value.trim();
   if(!qty||qty<=0){toast('Enter how many eggs');return;}
   if(!pr||pr<=0){toast('Enter the total price');return;}
   if(!py){toast('Select who paid');return;}
-  fbPush('flattab/purchases',{item:'Eggs',qty,unit:'eggs',priceTotal:pr,paidBy:py,remarks,ts:Date.now()})
+  fbPush('flattab/purchases',{item:'Eggs',qty,unit:'eggs',priceTotal:pr,paidBy:py,ts:Date.now()})
     .then(()=>{
       document.getElementById('buyHowMany').value='';
       document.getElementById('buyPrice').value='';
-      document.getElementById('buyRemarks').value='';
       toast('Purchase recorded!'); showTab('balances');
     });
 }
@@ -925,7 +919,6 @@ function updateConPreview(){
   const item=document.getElementById('conItem').value; if(!item)return;
   const stk=getStock(); const s=stk[item.toLowerCase()]; if(!s)return;
   const qs={};
-  const remarks=document.getElementById('conRemarks').value.trim();
   KEYS.forEach(k=>qs[k]=parseFloat(document.getElementById('q'+k).value||'0')||0);
   const total=KEYS.reduce((a,k)=>a+qs[k],0);
   const prev=document.getElementById('conPreview');
@@ -954,7 +947,7 @@ function logConsume(){
   const stk=getStock(); const s=stk[item.toLowerCase()];
   if(!s||s.remaining<=0){toast('No stock remaining!');return;}
   if(total>s.remaining+0.001){toast('Exceeds remaining stock!');return;}
-  fbPush('flattab/consumptions',{item,quantities:qs,remarks,ts:Date.now()})
+  fbPush('flattab/consumptions',{item,quantities:qs,ts:Date.now()})
     .then(()=>{ toast('Consumption recorded!'); showTab('balances'); });
 }
 
